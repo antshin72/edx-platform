@@ -111,6 +111,129 @@ class MongoContentStore(ContentStore):
         # Deletes of non-existent files are considered successful
         self.fs.delete(location_or_id)
 
+    ''' kmooc MME '''
+
+    def save_cdn(self, content):
+        content_id, content_son = self.asset_db_key(content.location)
+        self.delete(content_id)
+
+        try:
+            uuid = unicode(content['uuid'])
+        except:
+            # pass
+            uuid = unicode(content.uuid)
+
+        try:
+            playtime = unicode(content['playtime'])
+        except:
+            # pass
+            playtime = unicode(content.playtime)
+
+        with self.fs.new_file(_id=content_id,
+                              filename=unicode(content.location),
+                              displayname=content.name,
+                              content_son=content_son,
+                              cdn_url=content.cdn_url,
+                              content_type=content.content_type,
+                              thumbnail_location=None,
+                              uuid=uuid, state=unicode(content.state), playtime=playtime,
+                              thumbnail_url=unicode(content.thumbnail_url),
+                              locked=getattr(content, 'locked', False)
+                              ) as fp:
+
+            print("mongodb insert ok: %s, %s, %s" % (uuid, playtime, content.location))
+
+        return content
+    def find_cdn(self, location, throw_on_not_found=True, as_stream=False):
+        ''' kmooc MME '''
+        content_id, __ = self.asset_db_key(location)
+
+        try:
+            with self.fs.get(content_id) as fp:
+
+                return StaticContent(
+                    content_id, fp.displayname, fp.content_type, fp.read(), last_modified_at=fp.uploadDate,
+                )
+        except NoFile:
+            if throw_on_not_found:
+                raise NotFoundError(content_id)
+            else:
+                return None
+    def find_cdn_uuid(self, location, throw_on_not_found=True, as_stream=False):
+        '''
+        KMOOC UUID find
+        Args:
+            location:
+            throw_on_not_found:
+            as_stream:
+
+        Returns:
+
+        '''
+        content_id, __ = self.asset_db_key(location)
+        try:
+            with self.fs.get(content_id) as fp:
+                return {'uuid': fp.uuid, 'playtime':fp.playtime, 'cdn_url': fp.cdn_url}
+
+
+        except NoFile:
+            if throw_on_not_found:
+                raise NotFoundError(content_id)
+            else:
+                return None
+
+    def get_all_cdn_content_for_course(self, course_key, start=0, maxresults=-1, sort=None, filter_params=None):
+        ''' kmooc mme '''
+        return self._get_all_cdn_content_for_course(
+            course_key, start=start, maxresults=maxresults, get_thumbnails=False, sort=sort, filter_params=filter_params
+        )
+
+
+    def _get_all_cdn_content_for_course(self,
+                                            course_key,
+                                            get_thumbnails=False,
+                                            start=0,
+                                            maxresults=-1,
+                                            sort=None,
+                                            filter_params=None):
+        ''' kmooc MME '''
+
+
+        '''
+        Returns a list of all static assets for a course. The return format is a list of asset data dictionary elements.
+
+        The asset data dictionaries have the following keys:
+            asset_key (:class:`opaque_keys.edx.AssetKey`): The key of the asset
+            displayname: The human-readable name of the asset
+            uploadDate (datetime.datetime): The date and time that the file was uploadDate
+            contentType: The mimetype string of the asset
+            md5: An md5 hash of the asset content
+        '''
+        query = query_for_course(course_key, "cdn" if not get_thumbnails else "thumbnail")
+        find_args = {"sort": sort}
+        if maxresults > 0:
+            find_args.update({
+                "skip": start,
+                "limit": maxresults,
+            })
+        if filter_params:
+            query.update(filter_params)
+
+        items = self.fs_files.find(query, **find_args)
+        count = items.count()
+        assets = list(items)
+
+        # We're constructing the asset key immediately after retrieval from the database so that
+        # callers are insulated from knowing how our identifiers are stored.
+        for asset in assets:
+            asset_id = asset.get('content_son', asset['_id'])
+            asset['asset_key'] = course_key.make_asset_key(asset_id['category'], asset_id['name'])
+        return assets, count
+
+
+
+
+
     @autoretry_read()
     def find(self, location, throw_on_not_found=True, as_stream=False):
         content_id, __ = self.asset_db_key(location)

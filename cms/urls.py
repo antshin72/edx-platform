@@ -108,6 +108,11 @@ urlpatterns = [
     url(r'^assets/{}/{}?$'.format(settings.COURSE_KEY_PATTERN, settings.ASSET_KEY_PATTERN),
         contentstore.views.assets_handler,
         name='assets_handler'),
+    ##MME CDN URL
+    url(r'^cdn/{}/{}?$', format(settings.COURSE_KEY_PATTERN, settings.ASSET_KEY_PATTERN), contentstore.views.cdn_handler, name='cdns_handler'),
+    url(r'^cdn_call/{}/{}?$', format(settings.COURSE_KEY_PATTERN, settings.ASSET_KEY_PATTERN), contentstore.views.cdn_handler, name='cdns_handler'),
+
+
     url(r'^import/{}$'.format(COURSELIKE_KEY_PATTERN), contentstore.views.import_handler,
         name='import_handler'),
     url(r'^import_status/{}/(?P<filename>.+)$'.format(COURSELIKE_KEY_PATTERN),
