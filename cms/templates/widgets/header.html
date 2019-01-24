@@ -26,9 +26,7 @@
             textbooks_url = reverse('textbooks_list_handler', kwargs={'course_key_string': unicode(course_key)})
             videos_url = reverse('videos_handler', kwargs={'course_key_string': unicode(course_key)})
 
-      ##          MME연동 참조
-            #cdn_url = reverse('contentstore.views.assets_handler', kwargs={'course_key_string': unicode(course_key)})
-            #cdn_url = cdn_url.replace('assets', 'cdn')
+
 
             import_url = reverse('import_handler', kwargs={'course_key_string': unicode(course_key)})
             course_info_url = reverse('course_info_handler', kwargs={'course_key_string': unicode(course_key)})
@@ -37,8 +35,12 @@
             grading_url = reverse('grading_handler', kwargs={'course_key_string': unicode(course_key)})
             advanced_settings_url = reverse('advanced_settings_handler', kwargs={'course_key_string': unicode(course_key)})
             tabs_url = reverse('tabs_handler', kwargs={'course_key_string': unicode(course_key)})
+
             ##CDN
-            cdn_url = reverse('cdns_handler', kwargs={'course_key_string': unicode(course_key)})
+            cdn_url = reverse('assets_handler', kwargs={'course_key_string': unicode(course_key)})
+
+
+
             certificates_url = ''
             if settings.FEATURES.get("CERTIFICATES_HTML_VIEW") and context_course.cert_html_view_enabled:
                 certificates_url = reverse('certificates_list_handler', kwargs={'course_key_string': unicode(course_key)})
