@@ -1,3 +1,4 @@
+#-*- coding: utf-8 -*-
 """
 MongoDB/GridFS-level code for the contentstore.
 """
@@ -114,6 +115,11 @@ class MongoContentStore(ContentStore):
     ''' kmooc MME '''
 
     def save_cdn(self, content):
+        '''
+        CDN MME
+        :param content:
+        :return:
+        '''
         content_id, content_son = self.asset_db_key(content.location)
         self.delete(content_id)
 
@@ -145,12 +151,21 @@ class MongoContentStore(ContentStore):
 
         return content
     def find_cdn(self, location, throw_on_not_found=True, as_stream=False):
-        ''' kmooc MME '''
+        '''
+        CDN MME
+        :param location:
+        :param throw_on_not_found:
+        :param as_stream:
+        :return:
+        '''
         content_id, __ = self.asset_db_key(location)
 
         try:
             with self.fs.get(content_id) as fp:
-
+                if as_stream:
+                    return StaticContentStream(
+                        content_id, fp.displayname, fp.content_type, fp.read(), last_modified_at=fp.uploadDate
+                    )
                 return StaticContent(
                     content_id, fp.displayname, fp.content_type, fp.read(), last_modified_at=fp.uploadDate,
                 )
@@ -181,6 +196,17 @@ class MongoContentStore(ContentStore):
                 raise NotFoundError(content_id)
             else:
                 return None
+    def delete_cdn(self, location_or_id):
+        '''
+        CDN MME
+        todo MME DELETE Call 처리
+        :param location_or_id:
+        :return:
+        '''
+        if isinstance(location_or_id, AssetKey):
+            location_or_id, _ = self.asset_db_key(location_or_id)
+        # Deletes of non-existent files are considered successful
+        self.fs.delete(location_or_id)
 
     def get_all_cdn_content_for_course(self, course_key, start=0, maxresults=-1, sort=None, filter_params=None):
         ''' kmooc mme '''
@@ -197,7 +223,6 @@ class MongoContentStore(ContentStore):
                                             sort=None,
                                             filter_params=None):
         ''' kmooc MME '''
-
 
         '''
         Returns a list of all static assets for a course. The return format is a list of asset data dictionary elements.
@@ -222,6 +247,8 @@ class MongoContentStore(ContentStore):
         items = self.fs_files.find(query, **find_args)
         count = items.count()
         assets = list(items)
+
+        # import logging;logging.info(assets)
 
         # We're constructing the asset key immediately after retrieval from the database so that
         # callers are insulated from knowing how our identifiers are stored.

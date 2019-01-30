@@ -1,0 +1,74 @@
+<%
+var uuid = portable_url;
+%>
+<td class="thumb-col">
+    <div class="thumb">
+        <% if (thumbnail !== '') { %>
+        <img src="<%= thumbnail %>" alt="<%= display_name %>">
+        <% } %>
+    </div>
+</td>
+<td class="name-col">
+    <span class="title"><a data-tooltip="<%= gettext('Open/download this file') %>" href="<%= external_url %>" class="filename" target="_blank"><%= display_name %></a></span>
+    <div class="embeddable-xml"></div>
+</td>
+<td class="type-col">
+    <%= asset_type %>
+</td>
+<td class="date-col">
+    <%= date_added %>
+</td>
+<td class="embed-col">
+    <ul>
+        <li class="embed-url">
+            <label>
+                <span class="label">Status: </span>
+                <%
+
+                if(state == 'E'){
+                    state_msg = '동영상 인코딩 완료'
+                }else if(state == 'S'){
+                    state_msg = '동영상 인코딩 개시'
+                }else if(state == 'F'){
+                    state_msg = '동영상 인코딩 실패'
+                }else{
+                    state_msg = '동영상 인코딩 체크'
+                }
+
+                //console.log('state:'+state,'uuid:'+uuid, 'url:'+url, 'display_name:'+display_name, 'asset_type:'+asset_type, 'thumbnail:'+thumbnail, 'external_url:'+external_url, 'portable_url:'+portable_url);
+                //console.log('cdn_url', cdn_url);
+
+                try{
+                    var trans = trans_state(uuid, display_name, asset_type, thumbnail, external_url, state);
+                }catch(e){}
+
+                if(state == 'S' || state == 'I'){
+                    trans_state(uuid, display_name, asset_type, thumbnail, external_url, state);
+                }
+
+                %>
+
+                <% if(state == 'E' || state == 'F'){%>
+                    <input type="text" class="embeddable-xml-input trans-state" id="<%= uuid %>" name='state' value="<%= state_msg %>" readonly>
+                <%}else{%>
+                    <input type="text" data-state="<%- state %>" class="embeddable-xml-input trans-state" id="<%= uuid %>" name='state' value="<%- state_msg%>" readonly>
+                <%}%>
+
+            </label>
+        </li>
+        <li class="external-url">
+            <label>
+                <span class="label"><%= gettext('Web:') %></span>
+                <input type="text" class="embeddable-xml-input" value="<%= external_url %>" readonly <% if(state == 'F'){%>disabled<% }%>>
+            </label>
+        </li>
+    </ul>
+
+</td>
+<td class="actions-col">
+    <ul class="actions-list">
+        <li class="action-item action-delete">
+            <a href="#" data-tooltip="<%= gettext('Delete this asset') %>" class="remove-asset-button action-button"><i class="icon fa fa-times-circle" aria-hidden="true"></i> <span class="sr"><%= gettext('Delete this asset') %></span></a>
+        </li>
+    </ul>
+</td>
