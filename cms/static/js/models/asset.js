@@ -11,7 +11,7 @@ define(['backbone'], function(Backbone) {
             url: '',
             external_url: '',
             portable_url: '',
-            locked: false, uuid: ''
+            locked: false
         },
         get_extension: function() {
             var name_segments = this.get('display_name').split('.').reverse();
