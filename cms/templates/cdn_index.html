@@ -331,48 +331,48 @@ is-signedin course uploads view-uploads-cdn
     };
 
 
-var trCdnFile = ""
-+ "<tr>"
-+ "    <td class=\"thumb-col\">"
-+ "    <div class=\"thumb\">"
-+ "         <img src=\"{{thumbnail}}\" alt=\"No description available\">"
-+ "    </div>"
-+ "</td>"
-+ "<td class=\"name-col\">"
-+ "    <span class=\"title\"><a data-tooltip=\"Open/download this file\" href=\"{{url}}\" class=\"filename\" target=\"_blank\">{{display_name}}</a></span>"
-+ "    <div class=\"embeddable-xml\"></div>"
-+ "</td>"
-+ "<td class=\"type-col\">"
-+ "    {{content_type}}"
-+ "</td>"
-+ "<td class=\"date-col\">"
-+ "    {{date_added}}"
-+ "</td>"
-+ "<td class=\"embed-col\">"
-+ "    <ul>"
-+ "        <li class=\"embed-url\">"
-+ "            <label>"
-+ "                <span class=\"label\">Status:</span>"
-+ "                <input type=\"text\" class=\"embeddable-xml-input trans-status-{{uuid}}\" id=\"{{uuid}}\" value=\"{{state}}\" readonly=\"\">"
-+ "            </label>"
-+ "        </li>"
-+ "        <li class=\"external-url\">"
-+ "            <label>"
-+ "                <span class=\"label\">Web:</span>"
-+ "                <input type=\"text\" class=\"embeddable-xml-input\" value=\"{{url}}\" readonly=\"\">"
-+ "            </label>"
-+ "        </li>"
-+ "    </ul>"
-+ "</td>"
-+ "<td class=\"actions-col\">"
-+ "    <ul class=\"actions-list\">"
-+ "        <li class=\"action-item action-delete\">"
-//+ "            <a href=\"javascript:ajaxDeleteEdX();\" style=\"display:inline\" data-tooltip=\"Delete this asset\" class=\"remove-asset-button action-button\" ><i class=\"icon fa fa-times-circle\" aria-hidden=\"true\"></i> <span class=\"sr\">Delete this asset</span></a>"
-+ '<a href="#" onclick="ajaxDeleteEdX(\'{{id}}\')" data-tooltip="Delete this asset" class="remove-asset-button action-button"><i class="icon fa fa-times-circle" aria-hidden="true"></i> <span class="sr">Delete this asset</span></a>'
-+ "        </li>"
-+ "    </ul>"
-+ "</td>"
-+ "</tr>";
+    var trCdnFile = ""
+    + "<tr>"
+    + "    <td class=\"thumb-col\">"
+    + "    <div class=\"thumb\">"
+    + "         <img src=\"{{thumbnail}}\" alt=\"No description available\">"
+    + "    </div>"
+    + "</td>"
+    + "<td class=\"name-col\">"
+    + "    <span class=\"title\"><a data-tooltip=\"Open/download this file\" href=\"{{url}}\" class=\"filename\" target=\"_blank\">{{display_name}}</a></span>"
+    + "    <div class=\"embeddable-xml\"></div>"
+    + "</td>"
+    + "<td class=\"type-col\">"
+    + "    {{content_type}}"
+    + "</td>"
+    + "<td class=\"date-col\">"
+    + "    {{date_added}}"
+    + "</td>"
+    + "<td class=\"embed-col\">"
+    + "    <ul>"
+    + "        <li class=\"embed-url\">"
+    + "            <label>"
+    + "                <span class=\"label\">Status:</span>"
+    + "                <input type=\"text\" class=\"embeddable-xml-input trans-status-{{uuid}}\" id=\"{{uuid}}\" value=\"{{state}}\" readonly=\"\">"
+    + "            </label>"
+    + "        </li>"
+    + "        <li class=\"external-url\">"
+    + "            <label>"
+    + "                <span class=\"label\">Web:</span>"
+    + "                <input type=\"text\" class=\"embeddable-xml-input\" value=\"{{url}}\" readonly=\"\">"
+    + "            </label>"
+    + "        </li>"
+    + "    </ul>"
+    + "</td>"
+    + "<td class=\"actions-col\">"
+    + "    <ul class=\"actions-list\">"
+    + "        <li class=\"action-item action-delete\">"
+    //+ "            <a href=\"javascript:ajaxDeleteEdX();\" style=\"display:inline\" data-tooltip=\"Delete this asset\" class=\"remove-asset-button action-button\" ><i class=\"icon fa fa-times-circle\" aria-hidden=\"true\"></i> <span class=\"sr\">Delete this asset</span></a>"
+    + '<a href="#" onclick="ajaxDeleteEdX(\'{{id}}\')" data-tooltip="Delete this asset" class="remove-asset-button action-button"><i class="icon fa fa-times-circle" aria-hidden="true"></i> <span class="sr">Delete this asset</span></a>'
+    + "        </li>"
+    + "    </ul>"
+    + "</td>"
+    + "</tr>";
 
     var ajaxPutEdX = function() {
 
@@ -707,15 +707,17 @@ var trCdnFile = ""
 
                             if(message == 'FAILURE'){
                                 state_msg = "인코딩 실패";
-                                this.state_code = 'E';
+                                this.state_code = 'F';
                                 $("#"+uuid).val(state_msg);
+                                setStateCall(uuid, file_name, file_type, thumbnail_url, cdn_url, 'E');
 
                                 clearInterval(transcoding_status);
 
                             }else if(message == 'PENDING'){
                                 if(status == 'fail'){
                                     state_msg = "인코딩 실패";
-                                    this.state_code = 'E';
+                                    this.state_code = 'F';
+                                    setStateCall(uuid, file_name, file_type, thumbnail_url, cdn_url, 'F');
 
                                     clearInterval(transcoding_status);
 
@@ -728,6 +730,7 @@ var trCdnFile = ""
                                     this.state_code = 'E';
 
                                     $("#"+uuid).val(state_msg);
+                                    setStateCall(uuid, file_name, file_type, thumbnail_url, cdn_url, 'E');
 
                                     clearInterval(transcoding_status);
 
@@ -743,7 +746,7 @@ var trCdnFile = ""
                                 this.state_code = 'E';
 
                                 $("#"+uuid).val(state_msg);
-
+                                setStateCall(uuid, file_name, file_type, thumbnail_url, cdn_url, 'E');
                                 clearInterval(transcoding_status);
                             }else if(message == 'PROGRESS'){
                                 state_msg = '동영상 인코딩 진행중 '+percent+'%';
@@ -766,7 +769,31 @@ var trCdnFile = ""
 
     }
 
-
+    var setStateCall = function (uuid, file_name, file_type, thumbnail_url, cdn_url, state) {
+        $.ajax({
+            url: '/cdn_call/' + course_id,
+            type: "GET",
+            dataType: "json",
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
+            data: {uuid: uuid, file_name: file_name, file_type: file_type, thumbnail_url: thumbnail_url, cdn_url: cdn_url, state: state},
+            success: function(jdata, textStatus, jqXHR){
+                // console.log('success', jdata);
+                // console.log(uuid, file_name, file_type, thumbnail_url, cdn_url, state, playtime);
+            },
+            error: function(jqXHR, textStatus, errorThrown){
+                // console.log('error', errorThrown);
+                /*
+                console.log("HTTP Request Failed");
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
+                */
+            }
+        });
+    }
 
 //ajaxGetEdX();
 </script>

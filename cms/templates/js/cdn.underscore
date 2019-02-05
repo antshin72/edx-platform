@@ -1,5 +1,7 @@
 <%
 var uuid = portable_url;
+var cdn_state = url;
+console.log(cdn_state, portable_url, url);
 %>
 <td class="thumb-col">
     <div class="thumb">
@@ -25,11 +27,11 @@ var uuid = portable_url;
                 <span class="label">Status: </span>
                 <%
 
-                if(state == 'E'){
+                if(cdn_state == 'E'){
                     state_msg = '동영상 인코딩 완료'
-                }else if(state == 'S'){
+                }else if(cdn_state == 'S'){
                     state_msg = '동영상 인코딩 개시'
-                }else if(state == 'F'){
+                }else if(cdn_state == 'F'){
                     state_msg = '동영상 인코딩 실패'
                 }else{
                     state_msg = '동영상 인코딩 체크'
@@ -38,20 +40,18 @@ var uuid = portable_url;
                 //console.log('state:'+state,'uuid:'+uuid, 'url:'+url, 'display_name:'+display_name, 'asset_type:'+asset_type, 'thumbnail:'+thumbnail, 'external_url:'+external_url, 'portable_url:'+portable_url);
                 //console.log('cdn_url', cdn_url);
 
-                try{
-                    var trans = trans_state(uuid, display_name, asset_type, thumbnail, external_url, state);
-                }catch(e){}
 
-                if(state == 'S' || state == 'I'){
-                    trans_state(uuid, display_name, asset_type, thumbnail, external_url, state);
+
+                if(cdn_state == 'S' || cdn_state == 'I' || cdn_state == '' || cdn_state == undefined){
+                    trans_state(uuid, display_name, asset_type, thumbnail, external_url, cdn_state, playtime);
                 }
 
                 %>
 
-                <% if(state == 'E' || state == 'F'){%>
+                <% if(cdn_state == 'E' || cdn_state == 'F'){%>
                     <input type="text" class="embeddable-xml-input trans-state" id="<%= uuid %>" name='state' value="<%= state_msg %>" readonly>
                 <%}else{%>
-                    <input type="text" data-state="<%- state %>" class="embeddable-xml-input trans-state" id="<%= uuid %>" name='state' value="<%- state_msg%>" readonly>
+                    <input type="text" data-state="<%- cdn_state %>" class="embeddable-xml-input trans-state" id="<%= uuid %>" name='state' value="<%- state_msg%>" readonly>
                 <%}%>
 
             </label>
@@ -59,7 +59,7 @@ var uuid = portable_url;
         <li class="external-url">
             <label>
                 <span class="label"><%= gettext('Web:') %></span>
-                <input type="text" class="embeddable-xml-input" value="<%= external_url %>" readonly <% if(state == 'F'){%>disabled<% }%>>
+                <input type="text" class="embeddable-xml-input" value="<%= external_url %>" readonly <% if(cdn_state == 'F'){%>disabled<% }%>>
             </label>
         </li>
     </ul>

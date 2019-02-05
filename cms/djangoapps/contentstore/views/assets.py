@@ -129,7 +129,6 @@ def cdn_callback(request, course_key_string=None, asset_key_string=None):
     #todo method check!!! (mme)
     try:
         course_key = CourseKey.from_string(course_key_string)
-        asset_key = AssetKey.from_string(asset_key_string) if asset_key_string else None
 
         content = request.GET
         content_keys = request.GET.keys()
@@ -146,25 +145,32 @@ def cdn_callback(request, course_key_string=None, asset_key_string=None):
         content.mme = 'mme'
 
         if content.name and content.cdn_url and content.content_type and content.thumbnail_url \
-            and content.uuid and content.playtime and content.state:
+            and content.uuid and content.state:
 
-
+            content.location = StaticContent.compute_cdn_location(course_key, content.name)
+            # logging.info(content.location)
             mongo = contentstore().find_cdn_uuid(content.location)
-            if mongo['uuid'] == content.uuid:
-            # print mongo
-                contentstore().save_cdn(content)
 
+
+
+            # logging.info(dir(mongo))
+            # for k, v in mongo.items():
+            #     logging.info(k)
+            #     logging.info(v)
+            if mongo['uuid'] == content.uuid:
+            # # print mongo
+                contentstore().save_cdn(content)
+                # contentstore().update_state(content, content.state)
+            #
                 return JsonResponse({'status': 'ok'})
             else:
                 return JsonResponse({'status': 'fail', 'msg': 'uuid not found'})
+            return JsonResponse({'status': 'ok'})
         else:
             return JsonResponse({'state': 'fail', 'msg': 'params'})
     except Exception as e:
 
-        return JsonResponse({
-            'status': 'fail',
-            'msg': e
-        })
+        return JsonResponse({'state': 'fail', 'msg': e.message})
 
 # @login_required
 @csrf_exempt
@@ -394,7 +400,7 @@ def _assets_cdn_json(request, course_key):
 
     assets_in_json_format = _get_assets_cdn_in_json_format(request, assets, course_key)
 
-    logging.info(assets_in_json_format)
+    # logging.info(assets_in_json_format)
 
     response_payload = {
         'start': first_asset_to_display_index,
@@ -639,7 +645,7 @@ def _get_assets_cdn_in_json_format(request, assets, course_key):
             thumbnail_url = get_thumbnail_url
 
         ''' 상태변환 처리 '''
-        if state not in ('E', 'F'):
+        if state not in ('F'):
 
             try:
                 cdn_parse = urlparse.urlparse(cdn_url)
@@ -702,6 +708,9 @@ def _get_assets_cdn_in_json_format(request, assets, course_key):
             thumbnail_asset_key,
             asset_is_locked
         )
+
+        # logging.info(state)
+        # logging.info(asset_in_json)
         assets_in_json_format.append(asset_in_json)
 
     return assets_in_json_format
@@ -1004,6 +1013,55 @@ def _save_cdn(request, course_key):
 
     contentstore().save_cdn(content)
 
+    readback = contentstore().find_cdn(content.location)
+    locked = False;
+    response_payload = {
+        'asset': _get_asset_json(
+            content.name,
+            content.content_type,
+            readback.last_modified_at,
+            content.location,
+            content.thumbnail_location,
+            locked
+        ),
+        'msg': _('Upload completed'),
+        'result': 'success'
+    }
+
+
+    return JsonResponse(response_payload)
+
+
+def _callback_cdn(request, course_key):
+    '''
+    CDN MME
+    메소드 추가
+    '''
+
+    content_keys = request.GET.keys()
+
+    content = request.GET
+    content.name = request.GET['file_name']
+
+    content.name = request.GET['file_name'] if 'file_name' in content_keys else ''
+    content.cdn_url = request.GET['cdn_url'] if 'cdn_url' in content_keys else ''
+    content.content_type = request.GET['file_type'] if 'file_type' in content_keys else ''
+    content.thumbnail_location = request.GET['thumbnail_url'] if 'thumbnail_url' in content_keys else ''
+    content.thumbnail_url = request.GET['thumbnail_url'] if 'thumbnail_url' in content_keys else ''
+    content.location = StaticContent.compute_cdn_location(course_key, request.GET[
+        'file_name']) if 'file_name' in content_keys else ''
+    content.uuid = request.GET['uuid'] if 'uuid' in content_keys else ''
+    content.playtime = request.GET['playtime'] if 'playtime' in content_keys else ''
+    content.state = request.GET['state'] if 'state' in content_keys else 'F'
+
+
+    content.content_type = request.GET['file_type']
+    content.thumbnail_location = request.GET['thumbnail_url'] or ''
+    content.thumbnail_url = request.GET['thumbnail_url'] or ''
+    content.location = StaticContent.compute_cdn_location(course_key, request.GET['file_name'])
+    # print content
+
+    contentstore().save_cdn(content)
 
     readback = contentstore().find_cdn(content.location)
     locked = False;
@@ -1091,7 +1149,7 @@ def _get_asset_cdn_json(display_name, content_type, date, location, uuid, playti
         'display_name': display_name,
         'content_type': content_type,
         'date_added': get_default_time_display(date),
-        'url': asset_url,
+        'url': state,
         'external_url': cdn_url,
         'portable_url': uuid,
         'uuid': uuid, 'playtime': playtime, 'state': state, 'cdn_url': cdn_url, 'thumbnail_url': thumbnail_url,

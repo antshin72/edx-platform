@@ -91,7 +91,7 @@ DEBUG_TOOLBAR_CONFIG = {
     'DISABLE_PANELS': (
         'debug_toolbar.panels.profiling.ProfilingPanel',
     ),
-    'SHOW_TOOLBAR_CALLBACK': 'cms.envs.devstack.should_show_debug_toolbar',
+    #'SHOW_TOOLBAR_CALLBACK': 'cms.envs.devstack.should_show_debug_toolbar',
 }
 
 

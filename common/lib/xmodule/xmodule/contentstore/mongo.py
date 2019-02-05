@@ -150,6 +150,18 @@ class MongoContentStore(ContentStore):
             print("mongodb insert ok: %s, %s, %s" % (uuid, playtime, content.location))
 
         return content
+
+    def update_state(self, uuid, state):
+
+        ##todo update 테스트를 해야함
+        ## db.fs.files.find({contentType: '^video/mp4$'})
+        ## db.fs.files.find({_id: 'asset-v1:edX+DemoX+Demo_Course+type@cdn+block@녹화_2016_03_11_15_10_10_264.mp4'})
+
+        # asset_db_key, __ = self.asset_db_key(location)
+
+        with self.fs.update({'uuid': uuid}, {'state': state}, upsert=True) as fp:
+            print "CDN update os: %s, %s" % (uuid, state)
+
     def find_cdn(self, location, throw_on_not_found=True, as_stream=False):
         '''
         CDN MME
